@@ -10,6 +10,9 @@ import re
 from API_service import WordCloudService
 from news_summary_model.summary_model import transformer
 
+import keyword_extract.key_extract_module as key_extract_module
+from sklearn.metrics.pairwise import cosine_similarity
+from sentence_transformers import SentenceTransformer
 app = FastAPI()
 
 class NewsSummary(BaseModel):
@@ -72,9 +75,23 @@ def summarize_news(news: NewsSummary):
     # Transformer 모델을 통한 요약 수행
     summary = predict(clean_content, model, tokenizer, START_TOKEN, END_TOKEN, ABS_MAX_LENGTH)
 
+    regex_news = regex_column(summary)
     # 요약 결과를 다시 정규화 (필요 시)
 
-    return {"news_summary": summary}
+    key_text = news.content
+    key_text = key_extract_module.preprocessing_article(key_text)
+    (article_embedding, n_gram_embeddings, n_gram_words) = key_extract_module.article_embedding(key_text)
+    news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6,
+                                                   variety=10)
+
+    model = SentenceTransformer('sentnece-transformers//xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    (key_embedding, keys_list) = key_extract_module.key_extract(model)
+
+    cosine_similarity(article_embedding, key_embedding)
+    cosine_recommand = [keys_list[index] for index in distances.argsort()[0][-top_n:]]
+
+    return {"news_summary": regex_news, "keywords": news_keywords, "recommand": cosine_recommand}
+
 
 # 앱 시작 시 모델과 토크나이저 로드
 @app.on_event("startup")
