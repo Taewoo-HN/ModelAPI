@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import re
+import logging
 
 from API_service import WordCloudService
 from news_summary_model.summary_model import transformer
@@ -13,18 +14,27 @@ from news_summary_model.summary_model import transformer
 import keyword_extract.key_extract_module as key_extract_module
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
+
 app = FastAPI()
+
+# 키워드와 제목 리스트를 받는 모델 정의
+class NewsRequest(BaseModel):
+    keyword: str
+    titles: List[str]
+
 
 class NewsSummary(BaseModel):
     content: str
+
 
 # 필요한 전역 변수 설정
 SEN_MAX_LENGTH = 799
 ABS_MAX_LENGTH = 149
 START_TOKEN = [1]  # 토크나이저에 맞는 시작 토큰
-END_TOKEN = [2]    # 토크나이저에 맞는 종료 토큰
-model = None       # 모델 로드를 위한 변수
-tokenizer = None   # 토크나이저 로드를 위한 변수
+END_TOKEN = [2]  # 토크나이저에 맞는 종료 토큰
+model = None  # 모델 로드를 위한 변수
+tokenizer = None  # 토크나이저 로드를 위한 변수
+
 
 # 모델 및 토크나이저 로드 함수 (앱 시작 시 실행)
 def load_model_and_tokenizer():
@@ -40,6 +50,7 @@ def load_model_and_tokenizer():
         dropout=0.3
     )
     model.load_weights('transformer(202_0.89_0.22).h5')  # 미리 학습된 가중치 로드
+
 
 # 텍스트 요약 함수 (evaluate & predict 활용)
 def evaluate(sentence, model, tokenizer, start_token, end_token, max_length):
@@ -58,10 +69,12 @@ def evaluate(sentence, model, tokenizer, start_token, end_token, max_length):
 
     return tf.squeeze(output, axis=0)
 
+
 def predict(sentence, model, tokenizer, start_token, end_token, max_length):
     prediction = evaluate(sentence, model, tokenizer, start_token, end_token, max_length)
     predicted_sentence = tokenizer.decode([i for i in prediction if i < tokenizer.vocab_size])
     return predicted_sentence
+
 
 # API 엔드포인트 구성
 @app.post("/summarizer")
@@ -72,11 +85,11 @@ def summarize_news(news: NewsSummary):
 
     if len(clean_content) > SEN_MAX_LENGTH:
         return clean_content[:SEN_MAX_LENGTH]
+
     # Transformer 모델을 통한 요약 수행
     summary = predict(clean_content, model, tokenizer, START_TOKEN, END_TOKEN, ABS_MAX_LENGTH)
 
     regex_news = regex_column(summary)
-    # 요약 결과를 다시 정규화 (필요 시)
 
     key_text = news.content
     key_text = key_extract_module.preprocessing_article(key_text)
@@ -84,21 +97,26 @@ def summarize_news(news: NewsSummary):
     news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6,
                                                    variety=10)
 
-    model = SentenceTransformer('sentnece-transformers//xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
-    (key_embedding, keys_list) = key_extract_module.key_extract(model)
+    top_n=5
+    lang_model = SentenceTransformer('sentnece-transformers//xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    (key_embedding, keys_list) = key_extract_module.key_extract(lang_model)
 
-    cosine_similarity(article_embedding, key_embedding)
+    distances=cosine_similarity(article_embedding, key_embedding)
     cosine_recommand = [keys_list[index] for index in distances.argsort()[0][-top_n:]]
 
-    return {"news_summary": regex_news, "keywords": news_keywords, "recommand": cosine_recommand}
+    logging.info("요약 결과: ", regex_news)
+    logging.info("키워드: ", news_keywords, "추천 키워드: ", cosine_recommand)
+
+    return {"news_summary": regex_news, "keywords": news_keywords, "recommand_keywords": cosine_recommand}
 
 
-# 앱 시작 시 모델과 토크나이저 로드
+# 앱 시작 시 모델과 토크나이저 로드``
 @app.on_event("startup")
 def startup_event():
     load_model_and_tokenizer()
 
-# regex_column 함수 정의 (이전 코드에 정의된 대로 사용)
+
+# regex_column 함수 정의
 def regex_column(columnList):
     if not isinstance(columnList, str):
         return ''
@@ -109,14 +127,9 @@ def regex_column(columnList):
     columnList = re.sub(r'\s+', ' ', columnList).strip()
     return columnList
 
-# 키워드와 제목 리스트를 받는 모델 정의
-class NewsRequest(BaseModel):
-    keyword: str
-    titles: List[str]
 
 @app.post("/news")
 def generate_cloud(news: NewsRequest):
-
     keyword = news.keyword
     titles = news.titles
 
@@ -124,6 +137,7 @@ def generate_cloud(news: NewsRequest):
 
     # 워드 클라우드 생성
     WordCloudService.to_wordcloud_client(news_list, keyword)
+
 
 @app.get("/download")
 def download_file():
