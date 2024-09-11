@@ -17,6 +17,7 @@ from sentence_transformers import SentenceTransformer
 
 app = FastAPI()
 
+
 # 키워드와 제목 리스트를 받는 모델 정의
 class NewsRequest(BaseModel):
     keyword: str
@@ -24,7 +25,11 @@ class NewsRequest(BaseModel):
 
 
 class NewsSummary(BaseModel):
-    content: str
+    content: List[str]
+
+
+class NewsData(BaseModel):
+    news: str
 
 
 # 필요한 전역 변수 설정
@@ -82,6 +87,7 @@ def summarize_news(news: NewsSummary):
     # 요청에서 받은 뉴스 내용 정제
     content = news.content
     clean_content = regex_column(content)  # 정규식으로 텍스트 정리
+    logging.info("정제된 뉴스 내용: ", clean_content)
 
     if len(clean_content) > SEN_MAX_LENGTH:
         return clean_content[:SEN_MAX_LENGTH]
@@ -90,24 +96,27 @@ def summarize_news(news: NewsSummary):
     summary = predict(clean_content, model, tokenizer, START_TOKEN, END_TOKEN, ABS_MAX_LENGTH)
 
     regex_news = regex_column(summary)
+    return {'news_content': regex_news }
 
-    key_text = news.content
+@app.post("/keyword")
+def keyword_extract(string: NewsSummary):
+    key_text = string.news
     key_text = key_extract_module.preprocessing_article(key_text)
     (article_embedding, n_gram_embeddings, n_gram_words) = key_extract_module.article_embedding(key_text)
     news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6,
                                                    variety=10)
 
-    top_n=5
     lang_model = SentenceTransformer('sentnece-transformers//xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     (key_embedding, keys_list) = key_extract_module.key_extract(lang_model)
+    top_n = 5
 
-    distances=cosine_similarity(article_embedding, key_embedding)
+    distances = cosine_similarity(article_embedding, key_embedding)
     cosine_recommand = [keys_list[index] for index in distances.argsort()[0][-top_n:]]
 
-    logging.info("요약 결과: ", regex_news)
+
     logging.info("키워드: ", news_keywords, "추천 키워드: ", cosine_recommand)
 
-    return {"news_summary": regex_news, "keywords": news_keywords, "recommand_keywords": cosine_recommand}
+    return { "keywords": news_keywords, "recommand_keywords": cosine_recommand}
 
 
 # 앱 시작 시 모델과 토크나이저 로드``
