@@ -21,7 +21,7 @@ def preprocessing_article(article: str):
             nouns.append(sen)
         else:
             nouns.append(sentence)
-    text = ' '.join(nouns)
+    text = ' '.join([' '.join(item) if isinstance(item, list) else item for item in nouns])
     return text
 
 def article_embedding(text: str):
@@ -60,7 +60,7 @@ def max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n, varie
 
 
 def key_extract(model):
-    with open('theme_dict.pkl', 'rb') as f:
+    with open('keyword_extract/data/theme_dict.pkl', 'rb') as f:
         loading_dict = pickle.load(f)
     keys = loading_dict.keys()
     keys_list = list(keys)

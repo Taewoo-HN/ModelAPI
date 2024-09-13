@@ -36,8 +36,7 @@ class NewsData(BaseModel):
 # 필요한 전역 변수 설정
 SEN_MAX_LENGTH = 799
 ABS_MAX_LENGTH = 149
-START_TOKEN = [1]  # 토크나이저에 맞는 시작 토큰
-END_TOKEN = [2]  # 토크나이저에 맞는 종료 토큰
+
 model = None  # 모델 로드를 위한 변수
 tokenizer = None  # 토크나이저 로드를 위한 변수
 
@@ -56,6 +55,8 @@ def load_model_and_tokenizer():
         dropout=0.3
     )
     model.load_weights('transformer(202_0.89_0.22).h5')  # 미리 학습된 가중치 로드
+    logging.info("모델 및 토크나이저 로드 완료!")
+    
 
 
 # 텍스트 요약 함수 (evaluate & predict 활용)
@@ -78,14 +79,14 @@ def summarize_news(news: NewsSummary):
     return {'news_content': regex_news }
 
 @app.post("/keyword")
-def keyword_extract(string: NewsSummary):
+def keyword_extract(string: NewsData):
     key_text = string.news
     key_text = key_extract_module.preprocessing_article(key_text)
     (article_embedding, n_gram_embeddings, n_gram_words) = key_extract_module.article_embedding(key_text)
     news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6,
                                                    variety=10)
 
-    lang_model = SentenceTransformer('sentnece-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    lang_model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     (key_embedding, keys_list) = key_extract_module.key_extract(lang_model)
     top_n = 5
 
