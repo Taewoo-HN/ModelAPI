@@ -359,9 +359,7 @@ def predict(sentence):
 
     return predicted_sentence
 
-
 model.load_weights('transformer(202_0.89_0.22).h5')
-
 
 def regex_column(columnList):
     if not isinstance(columnList, str):

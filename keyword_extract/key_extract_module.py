@@ -24,13 +24,12 @@ def preprocessing_article(article: str):
     text = ' '.join(nouns)
     return text
 
-
 def article_embedding(text: str):
     n_gram_range = (1, 2)
     word_vectorizer = CountVectorizer(ngram_range=n_gram_range).fit([text])
     n_gram_words = word_vectorizer.get_feature_names_out()
 
-    model = SentenceTransformer('sentnece-transformers//xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     article_embedding = model.encode([text])
     n_gram_embedding = model.encode(n_gram_words)
 
@@ -61,7 +60,7 @@ def max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n, varie
 
 
 def key_extract(model):
-    with open('theme_dict.pkl', 'wb') as f:
+    with open('theme_dict.pkl', 'rb') as f:
         loading_dict = pickle.load(f)
     keys = loading_dict.keys()
     keys_list = list(keys)

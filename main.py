@@ -8,8 +8,9 @@ from pydantic import BaseModel
 import re
 import logging
 
+
 from API_service import WordCloudService
-from news_summary_model.summary_model import transformer
+from news_summary_model.news_summarization import transformer, predict
 
 import keyword_extract.key_extract_module as key_extract_module
 from sklearn.metrics.pairwise import cosine_similarity
@@ -58,28 +59,6 @@ def load_model_and_tokenizer():
 
 
 # 텍스트 요약 함수 (evaluate & predict 활용)
-def evaluate(sentence, model, tokenizer, start_token, end_token, max_length):
-    sentence = tf.expand_dims(start_token + tokenizer.encode(sentence) + end_token, axis=0)
-    output = tf.expand_dims(start_token, 0)
-
-    for i in range(max_length):
-        predictions = model(inputs=[sentence, output], training=False)
-        predictions = predictions[:, -1:, :]
-        predicted_id = tf.cast(tf.argmax(predictions, axis=-1), tf.int32)
-
-        if tf.equal(predicted_id, end_token[0]):
-            break
-
-        output = tf.concat([output, predicted_id], axis=-1)
-
-    return tf.squeeze(output, axis=0)
-
-
-def predict(sentence, model, tokenizer, start_token, end_token, max_length):
-    prediction = evaluate(sentence, model, tokenizer, start_token, end_token, max_length)
-    predicted_sentence = tokenizer.decode([i for i in prediction if i < tokenizer.vocab_size])
-    return predicted_sentence
-
 
 # API 엔드포인트 구성
 @app.post("/summarizer")
@@ -93,7 +72,7 @@ def summarize_news(news: NewsSummary):
         return clean_content[:SEN_MAX_LENGTH]
 
     # Transformer 모델을 통한 요약 수행
-    summary = predict(clean_content, model, tokenizer, START_TOKEN, END_TOKEN, ABS_MAX_LENGTH)
+    summary = predict(clean_content)
 
     regex_news = regex_column(summary)
     return {'news_content': regex_news }
@@ -106,7 +85,7 @@ def keyword_extract(string: NewsSummary):
     news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6,
                                                    variety=10)
 
-    lang_model = SentenceTransformer('sentnece-transformers//xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    lang_model = SentenceTransformer('sentnece-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     (key_embedding, keys_list) = key_extract_module.key_extract(lang_model)
     top_n = 5
 
