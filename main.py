@@ -93,10 +93,10 @@ def keyword_extract(string: NewsData):
     distances = cosine_similarity(article_embedding, key_embedding)
     cosine_recommand = [keys_list[index] for index in distances.argsort()[0][-top_n:]]
 
+    news_keywords = ', '.join(news_keywords)
+    cosine_recommand = ', '.join(cosine_recommand)
 
-    logging.info("키워드: ", news_keywords, "추천 키워드: ", cosine_recommand)
-
-    return { "keywords": news_keywords, "recommand_keywords": cosine_recommand}
+    return {"keywords" : news_keywords, "recommand_keywords" : cosine_recommand}
 
 
 # 앱 시작 시 모델과 토크나이저 로드``
