@@ -26,12 +26,14 @@ class NewsRequest(BaseModel):
 
 
 class NewsSummary(BaseModel):
-    content: List[str]
+    content: str
 
 
 class NewsData(BaseModel):
     news: str
 
+class ChatRequest(BaseModel):
+    question: str
 
 # 필요한 전역 변수 설정
 SEN_MAX_LENGTH = 799
@@ -133,3 +135,8 @@ def download_file():
         return FileResponse(wordcloud_image_path, media_type="image/png")
     return {"error": "word cloud image not found"}
 
+
+@app.post("/chatbot")
+def chatting(chatMessage: ChatRequest):
+    
+    return {"chatbot": chatMessage.question}
