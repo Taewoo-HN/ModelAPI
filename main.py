@@ -43,7 +43,7 @@ tokenizer = None  # 토크나이저 로드를 위한 변수
 
 # 모델 및 토크나이저 로드 함수 (앱 시작 시 실행)
 def load_model_and_tokenizer():
-    global model, tokenizer
+    global model, tokenizer, lang_model
     # 모델과 토크나이저를 로드합니다.
     tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('tokenizer')
     model = transformer(
@@ -55,11 +55,9 @@ def load_model_and_tokenizer():
         dropout=0.3
     )
     model.load_weights('transformer(202_0.89_0.22).h5')  # 미리 학습된 가중치 로드
+    lang_model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     logging.info("모델 및 토크나이저 로드 완료!")
     
-
-
-# 텍스트 요약 함수 (evaluate & predict 활용)
 
 # API 엔드포인트 구성
 @app.post("/summarizer")
@@ -75,8 +73,9 @@ def summarize_news(news: NewsSummary):
     # Transformer 모델을 통한 요약 수행
     summary = predict(clean_content)
 
-    regex_news = regex_column(summary)
-    return {'news_content': regex_news }
+    return {'news_content': summary}
+
+
 
 @app.post("/keyword")
 def keyword_extract(string: NewsData):
@@ -85,8 +84,7 @@ def keyword_extract(string: NewsData):
     (article_embedding, n_gram_embeddings, n_gram_words) = key_extract_module.article_embedding(key_text)
     news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6,
                                                    variety=10)
-
-    lang_model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
+    
     (key_embedding, keys_list) = key_extract_module.key_extract(lang_model)
     top_n = 5
 
@@ -134,3 +132,4 @@ def download_file():
     if os.path.exists(wordcloud_image_path):
         return FileResponse(wordcloud_image_path, media_type="image/png")
     return {"error": "word cloud image not found"}
+
