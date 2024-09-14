@@ -8,7 +8,6 @@ from pydantic import BaseModel
 import re
 import logging
 
-
 from API_service import WordCloudService
 from news_summary_model.news_summarization import transformer, predict
 
@@ -64,7 +63,7 @@ def load_model_and_tokenizer():
 # API 엔드포인트 구성
 @app.post("/summarizer")
 def summarize_news(news: NewsSummary):
-    # 요청에서 받은 뉴스 내용 정제
+
     content = news.content
     clean_content = regex_column(content)  # 정규식으로 텍스트 정리
 
@@ -75,8 +74,6 @@ def summarize_news(news: NewsSummary):
     summary = predict(clean_content)
 
     return {'news_content': summary}
-
-
 
 @app.post("/keyword")
 def keyword_extract(string: NewsData):
@@ -97,12 +94,10 @@ def keyword_extract(string: NewsData):
 
     return {"keywords" : news_keywords, "recommand_keywords" : cosine_recommand}
 
-
 # 앱 시작 시 모델과 토크나이저 로드``
 @app.on_event("startup")
 def startup_event():
     load_model_and_tokenizer()
-
 
 # regex_column 함수 정의
 def regex_column(columnList):
@@ -133,9 +128,3 @@ def download_file():
     if os.path.exists(wordcloud_image_path):
         return FileResponse(wordcloud_image_path, media_type="image/png")
     return {"error": "word cloud image not found"}
-
-
-@app.post("/chatbot")
-def chatting(chatMessage: ChatRequest):
-    
-    return {"chatbot": chatMessage.question}
