@@ -67,7 +67,6 @@ def summarize_news(news: NewsSummary):
     # 요청에서 받은 뉴스 내용 정제
     content = news.content
     clean_content = regex_column(content)  # 정규식으로 텍스트 정리
-    logging.info("정제된 뉴스 내용: ", clean_content)
 
     if len(clean_content) > SEN_MAX_LENGTH:
         return clean_content[:SEN_MAX_LENGTH]
