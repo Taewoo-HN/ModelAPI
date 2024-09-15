@@ -154,6 +154,7 @@ def download_file():
 @app.post("/chatbot")
 def chatbot_response(question: ChatRequest):
     content = question.content
+    logging.info(f"사용자 질문: {content}")
     if len(content) > 50:
         return json.dumps({'message': '질문이 너무 깁니다! 조금만 줄여주세요!'})
     else:
