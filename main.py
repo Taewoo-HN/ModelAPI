@@ -2,6 +2,11 @@ import os
 from typing import List
 import tensorflow as tf
 import tensorflow_datasets as tfds
+from tensorflow.keras.models import load_model
+import json
+import pickle
+import numpy as np
+import string
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -23,7 +28,6 @@ class NewsRequest(BaseModel):
     keyword: str
     titles: List[str]
 
-
 class NewsSummary(BaseModel):
     content: str
 
@@ -44,7 +48,7 @@ tokenizer = None  # 토크나이저 로드를 위한 변수
 
 # 모델 및 토크나이저 로드 함수 (앱 시작 시 실행)
 def load_model_and_tokenizer():
-    global model, tokenizer, lang_model
+    global model, tokenizer, lang_model, lstm_model, lstm_tokenizer, keyword_dict, keyword_list, seq2seq_model, seq2seq_tokenizer, START_TOKEN, END_TOKEN, pre_token, prepre_token
     # 모델과 토크나이저를 로드합니다.
     tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('tokenizer')
     model = transformer(
@@ -55,6 +59,21 @@ def load_model_and_tokenizer():
         num_heads=2,
         dropout=0.3
     )
+    lstm_model = load_model('ModelAPI/Financial_Chatbot/Model/bidirectional_LSTM.h5')
+    lstm_tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('ModelAPI/Financial_chatbot/LSTM/Data/tokenizer')
+
+    ##      사전 데이터 로드
+    with open('ModelAPI/LSTM/Data/keyword_dict.pkl', 'rb') as file:
+        keyword_dict = pickle.load(file)
+    keyword_list = list(keyword_dict.keys())
+
+    ##      챗봇 데이터 로드
+    seq2seq_model = load_model('ModelAPI/Financial_Chatbot/Model/chatbot.h5')
+    seq2seq_tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('ModelAPI/Financial_Chatbot/Sequence2Sequence/Data/Final_Tokenizer')
+    START_TOKEN, END_TOKEN = [seq2seq_tokenizer.vocab_size], [seq2seq_tokenizer.vocab_size+1]
+    pre_token = -1
+    prepre_token = -1
+    
     model.load_weights('transformer(202_0.89_0.22).h5')  # 미리 학습된 가중치 로드
     lang_model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     logging.info("모델 및 토크나이저 로드 완료!")
@@ -128,3 +147,79 @@ def download_file():
     if os.path.exists(wordcloud_image_path):
         return FileResponse(wordcloud_image_path, media_type="image/png")
     return {"error": "word cloud image not found"}
+
+
+
+
+
+def chatbot_response(question: str):
+    if len(question) > 50:
+        return json.dumps({'message': '질문이 너무 깁니다! 조금만 줄여주세요!'})
+    else:
+        tokenied_question = []
+        tokenied_question.append(lstm_tokenizer.encode(question))
+        final_question = tf.keras.preprocessing.sequence.pad_sequences(
+            tokenied_question, maxlen=77, padding='post'
+        )
+        score = float(lstm_model.predict(final_question))
+        
+        if score > 0.5:  # 사전 질문이 들어왔을 때
+            try:
+                question_no_space = question.replace(" ", "")
+                included_keywords = [keyword for keyword in keyword_list if keyword in question_no_space]
+                
+                if not included_keywords:
+                    raise ValueError
+                
+                if len(included_keywords) > 1:
+                    keyword = max(included_keywords, key=len)
+                else:
+                    keyword = included_keywords[0]
+                
+                response = f"'{keyword}'의 뜻을 알려드릴께요\n{keyword}(이)란 '{keyword_dict.get(keyword)}'을(를) 뜻합니다."
+                return json.dumps({'response': response})
+            except ValueError:
+                return json.dumps({'response': '죄송합니다. 잘 모르겠습니다.'})
+        else:  # 지식인 질문이 들어왔을 때
+            question_list = []
+            result_list = []
+            final_sentence = ''
+            
+            question_list.append(seq2seq_tokenizer.encode(question))
+            tokenized_input_sentence = tf.keras.preprocessing.sequence.pad_sequences(
+                question_list, maxlen=59, padding='post'
+            )
+            
+            temparary_decoder_input = [START_TOKEN[0]]
+            pre_token = -1
+            prepre_token = -1
+            
+            for _ in range(142):
+                pred = seq2seq_model.predict(
+                    [tokenized_input_sentence, np.array(temparary_decoder_input).reshape(1, -1)],
+                    verbose=0
+                )
+                last_pred = pred[:, -1, :]
+                sorted_indices = np.argsort(last_pred, axis=-1)[:, ::-1]
+                next_token = sorted_indices[:, 0][0]
+                
+                if next_token >= 16251:
+                    break
+                
+                temparary_decoder_input.append(next_token)
+                
+                if pre_token != next_token and prepre_token != next_token:
+                    result_list.append(seq2seq_tokenizer.decode([next_token]))
+                
+                prepre_token = pre_token
+                pre_token = next_token
+            
+            final_sentence = ''.join(result_list)
+            special_characters = string.punctuation
+            final_sentence = final_sentence.lstrip(special_characters)
+            
+            if not final_sentence.endswith(('.', '!')):
+                final_sentence += '.'
+            
+            response = final_sentence
+            return json.dumps({'response': response})
