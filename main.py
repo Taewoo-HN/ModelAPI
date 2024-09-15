@@ -36,7 +36,8 @@ class NewsData(BaseModel):
     news: str
 
 class ChatRequest(BaseModel):
-    question: str
+    sender: str
+    content: str
 
 # 필요한 전역 변수 설정
 SEN_MAX_LENGTH = 799
@@ -59,17 +60,18 @@ def load_model_and_tokenizer():
         num_heads=2,
         dropout=0.3
     )
-    lstm_model = load_model('ModelAPI/Financial_Chatbot/Model/bidirectional_LSTM.h5')
-    lstm_tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('ModelAPI/Financial_chatbot/LSTM/Data/tokenizer')
+    
+    lstm_model = load_model('/usr/local/etc/ModelAPI/Financial_Chatbot/Model/bidirectional_LSTM.h5')
+    lstm_tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('/usr/local/etc/ModelAPI/Financial_Chatbot/LSTM/Data/tokenizer')
 
     ##      사전 데이터 로드
-    with open('ModelAPI/LSTM/Data/keyword_dict.pkl', 'rb') as file:
+    with open('/usr/local/etc/ModelAPI/Financial_Chatbot/keyword_dict.pkl', 'rb') as file:
         keyword_dict = pickle.load(file)
     keyword_list = list(keyword_dict.keys())
 
     ##      챗봇 데이터 로드
-    seq2seq_model = load_model('ModelAPI/Financial_Chatbot/Model/chatbot.h5')
-    seq2seq_tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('ModelAPI/Financial_Chatbot/Sequence2Sequence/Data/Final_Tokenizer')
+    seq2seq_model = load_model('/usr/local/etc/ModelAPI/Financial_Chatbot/chatbot(1.19-0.81).h5')
+    seq2seq_tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('/usr/local/etc/ModelAPI/Financial_Chatbot/Final_Tokenizer')
     START_TOKEN, END_TOKEN = [seq2seq_tokenizer.vocab_size], [seq2seq_tokenizer.vocab_size+1]
     pre_token = -1
     prepre_token = -1
@@ -149,15 +151,14 @@ def download_file():
     return {"error": "word cloud image not found"}
 
 
-
-
-
-def chatbot_response(question: str):
-    if len(question) > 50:
+@app.post("/chatbot")
+def chatbot_response(question: ChatRequest):
+    content = question.content
+    if len(content) > 50:
         return json.dumps({'message': '질문이 너무 깁니다! 조금만 줄여주세요!'})
     else:
         tokenied_question = []
-        tokenied_question.append(lstm_tokenizer.encode(question))
+        tokenied_question.append(lstm_tokenizer.encode(content))
         final_question = tf.keras.preprocessing.sequence.pad_sequences(
             tokenied_question, maxlen=77, padding='post'
         )
@@ -165,7 +166,7 @@ def chatbot_response(question: str):
         
         if score > 0.5:  # 사전 질문이 들어왔을 때
             try:
-                question_no_space = question.replace(" ", "")
+                question_no_space = content.replace(" ", "")
                 included_keywords = [keyword for keyword in keyword_list if keyword in question_no_space]
                 
                 if not included_keywords:
@@ -185,7 +186,7 @@ def chatbot_response(question: str):
             result_list = []
             final_sentence = ''
             
-            question_list.append(seq2seq_tokenizer.encode(question))
+            question_list.append(seq2seq_tokenizer.encode(content))
             tokenized_input_sentence = tf.keras.preprocessing.sequence.pad_sequences(
                 question_list, maxlen=59, padding='post'
             )
