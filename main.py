@@ -156,7 +156,7 @@ def chatbot_response(question: ChatRequest):
     content = question.content
     logging.info(f"사용자 질문: {content}")
     if len(content) > 50:
-        return json.dumps({'message': '질문이 너무 깁니다! 조금만 줄여주세요!'})
+        return json.dumps({'message': '질문이 너무 깁니다! 조금만 줄여주세요!'}, ensure_ascii=False).encode('utf-8')
     else:
         tokenied_question = []
         tokenied_question.append(lstm_tokenizer.encode(content))
@@ -179,9 +179,9 @@ def chatbot_response(question: ChatRequest):
                     keyword = included_keywords[0]
                 
                 response = f"'{keyword}'의 뜻을 알려드릴께요\n{keyword}(이)란 '{keyword_dict.get(keyword)}'을(를) 뜻합니다."
-                return json.dumps({'response': response})
+                return json.dumps({'response': response}, ensure_ascii=False).encode('utf-8')
             except ValueError:
-                return json.dumps({'response': '죄송합니다. 잘 모르겠습니다.'})
+                return json.dumps({'response': '죄송합니다. 잘 모르겠습니다.'}, ensure_ascii=False).encode('utf-8')
         else:  # 지식인 질문이 들어왔을 때
             question_list = []
             result_list = []
@@ -224,4 +224,4 @@ def chatbot_response(question: ChatRequest):
                 final_sentence += '.'
             
             response = final_sentence
-            return json.dumps({'response': response})
+            return json.dumps({'response': response}, ensure_ascii=False).encode('utf-8')
