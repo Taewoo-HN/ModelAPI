@@ -85,11 +85,10 @@ def load_model_and_tokenizer():
 @app.post("/summarizer")
 def summarize_news(news: NewsSummary):
 
-    content = news.content
-    clean_content = regex_column(content)  # 정규식으로 텍스트 정리
-
-    if len(clean_content) > SEN_MAX_LENGTH:
-        return clean_content[:SEN_MAX_LENGTH]
+    clean_content = regex_column(news.content)  # 정규식으로 텍스트 정리
+    
+    if clean_content == '':
+        return {'news_content': '내용이 없습니다.'}
 
     # Transformer 모델을 통한 요약 수행
     summary = predict(clean_content)
