@@ -354,7 +354,7 @@ def predict(sentence):
 
     predicted_sentence = tokenizer.decode(
         [i for i in prediction if i < tokenizer.vocab_size])
-    print(f'원문 : {sentence}')
+
     print(f'\n요약 : {predicted_sentence}')
 
     return predicted_sentence

@@ -14,7 +14,7 @@ import re
 import logging
 
 from API_service import WordCloudService
-from news_summary_model.news_summarization import transformer, predict
+from news_summary_model.news_summarization import transformer, predict, regex_column
 
 import keyword_extract.key_extract_module as key_extract_module
 from sklearn.metrics.pairwise import cosine_similarity
@@ -46,10 +46,6 @@ ABS_MAX_LENGTH = 149
 model = None  # 모델 로드를 위한 변수
 tokenizer = None  # 토크나이저 로드를 위한 변수
 
-EMAIL_PATTERN = re.compile(r'\S+@\S+\.\S+')
-BRACKETS_PATTERN = re.compile(r'\[.*?\]|\{.*?\}|\(.*?\)')
-SPECIAL_CHARS_PATTERN = re.compile(r'[^가-힣a-zA-Z0-9\u4e00-\u9fff\s.,!?\'\"~]')
-MULTI_SPACE_PATTERN = re.compile(r'\s+')
 
 
 # 모델 및 토크나이저 로드 함수 (앱 시작 시 실행)
@@ -89,11 +85,11 @@ def load_model_and_tokenizer():
 # API 엔드포인트 구성
 @app.post("/summarizer")
 def summarize_news(news: NewsSummary):
-    
     clean_content = regex_column(news.content)  # 정규식으로 텍스트 정리
     # Transformer 모델을 통한 요약 수행
     summary = predict(clean_content)
     return {'news_content': summary}
+
 
 @app.post("/keyword")
 def keyword_extract(string: NewsData):
@@ -119,19 +115,6 @@ def keyword_extract(string: NewsData):
 def startup_event():
     load_model_and_tokenizer()
 
-# regex_column 함수 정의
-def regex_column(columnList):
-    if not isinstance(columnList, str):
-        return ''
-    columnList = EMAIL_PATTERN.sub('', columnList)
-    columnList = columnList.replace('\n', '')
-    columnList = BRACKETS_PATTERN.sub('', columnList)
-    columnList = SPECIAL_CHARS_PATTERN.sub(' ', columnList)
-    columnList = MULTI_SPACE_PATTERN.sub(' ', columnList).strip()
-    
-    return columnList
-
-
 @app.post("/news")
 def generate_cloud(news: NewsRequest):
     keyword = news.keyword
@@ -141,7 +124,6 @@ def generate_cloud(news: NewsRequest):
 
     # 워드 클라우드 생성
     WordCloudService.to_wordcloud_client(news_list, keyword)
-
 
 @app.get("/download")
 def download_file():
@@ -154,7 +136,6 @@ def download_file():
 @app.post("/chatbot")
 def chatbot_response(question: ChatRequest):
     content = question.content
-    logging.info(f"사용자 질문: {content}")
     if len(content) > 50:
         return json.dumps({'message': '질문이 너무 깁니다! 조금만 줄여주세요!'}, ensure_ascii=False).encode('utf-8')
     else:
