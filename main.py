@@ -46,6 +46,11 @@ ABS_MAX_LENGTH = 149
 model = None  # 모델 로드를 위한 변수
 tokenizer = None  # 토크나이저 로드를 위한 변수
 
+EMAIL_PATTERN = re.compile(r'\S+@\S+\.\S+')
+BRACKETS_PATTERN = re.compile(r'\[.*?\]|\{.*?\}|\(.*?\)')
+SPECIAL_CHARS_PATTERN = re.compile(r'[^가-힣a-zA-Z0-9\u4e00-\u9fff\s.,!?\'\"~]')
+MULTI_SPACE_PATTERN = re.compile(r'\s+')
+
 
 # 모델 및 토크나이저 로드 함수 (앱 시작 시 실행)
 def load_model_and_tokenizer():
@@ -84,15 +89,10 @@ def load_model_and_tokenizer():
 # API 엔드포인트 구성
 @app.post("/summarizer")
 def summarize_news(news: NewsSummary):
-
-    clean_content = regex_column(news.content)  # 정규식으로 텍스트 정리
     
-    if clean_content == '':
-        return {'news_content': '내용이 없습니다.'}
-
+    clean_content = regex_column(news.content)  # 정규식으로 텍스트 정리
     # Transformer 모델을 통한 요약 수행
     summary = predict(clean_content)
-
     return {'news_content': summary}
 
 @app.post("/keyword")
@@ -123,11 +123,12 @@ def startup_event():
 def regex_column(columnList):
     if not isinstance(columnList, str):
         return ''
-    columnList = re.sub(r'\S+@\S+\.\S+', '', columnList)
+    columnList = EMAIL_PATTERN.sub('', columnList)
     columnList = columnList.replace('\n', '')
-    columnList = re.sub(r'\[.*?\]|\{.*?\}|\(.*?\)', '', columnList)
-    columnList = re.sub(r'[^가-힣a-zA-Z0-9\u4e00-\u9fff\s.,!?\'\"~]', ' ', columnList)
-    columnList = re.sub(r'\s+', ' ', columnList).strip()
+    columnList = BRACKETS_PATTERN.sub('', columnList)
+    columnList = SPECIAL_CHARS_PATTERN.sub(' ', columnList)
+    columnList = MULTI_SPACE_PATTERN.sub(' ', columnList).strip()
+    
     return columnList
 
 
