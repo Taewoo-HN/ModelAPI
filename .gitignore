@@ -24,3 +24,4 @@ Financial_Chatbot/Sequence2Sequence/Data/Final_encoder_input_train.npy
 Financial_Chatbot/Sequence2Sequence/Data/Final_Tokenizer.subwords
 Financial_Chatbot/Sequence2Sequence/Data/questions.pkl
 Financial_Chatbot/Sequence2Sequence/Data/tokenizer.subwords
+stock_chatbot_model/model.safetensors
