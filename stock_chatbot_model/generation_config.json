@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 {
   "_from_model_config": true,
   "bos_token_id": 1,
@@ -9,6 +10,8 @@
   "transformers_version": "4.45.1"
 }
 =======
+=======
+>>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
 {
   "_from_model_config": true,
   "bos_token_id": 1,
@@ -18,4 +21,7 @@
   "pad_token_id": 3,
   "transformers_version": "4.45.1"
 }
+<<<<<<< HEAD
+>>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
+=======
 >>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229

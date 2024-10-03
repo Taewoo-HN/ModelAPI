@@ -132,6 +132,11 @@ def download_file():
 @app.post("/chatbot")
 def chatbot_response(question: ChatRequest):
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    @app.post("/chatbot")
+def chatbot_response(question: ChatRequest):
+>>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
 =======
     @app.post("/chatbot")
 def chatbot_response(question: ChatRequest):

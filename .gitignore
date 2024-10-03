@@ -25,7 +25,11 @@ Financial_Chatbot/Sequence2Sequence/Data/Final_Tokenizer.subwords
 Financial_Chatbot/Sequence2Sequence/Data/questions.pkl
 Financial_Chatbot/Sequence2Sequence/Data/tokenizer.subwords
 <<<<<<< HEAD
+<<<<<<< HEAD
 stock_chatbot_model/model.safetensors
+=======
+stock_chatbot_model/model.safetensors
+>>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
 =======
 stock_chatbot_model/model.safetensors
 >>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
