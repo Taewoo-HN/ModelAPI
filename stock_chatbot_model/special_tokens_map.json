@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 {
   "bos_token": {
     "content": "</s>",
@@ -37,47 +35,3 @@
     "single_word": false
   }
 }
-=======
-=======
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
-{
-  "bos_token": {
-    "content": "</s>",
-    "lstrip": false,
-    "normalized": false,
-    "rstrip": false,
-    "single_word": false
-  },
-  "eos_token": {
-    "content": "</s>",
-    "lstrip": false,
-    "normalized": false,
-    "rstrip": false,
-    "single_word": false
-  },
-  "mask_token": {
-    "content": "<mask>",
-    "lstrip": false,
-    "normalized": false,
-    "rstrip": false,
-    "single_word": false
-  },
-  "pad_token": {
-    "content": "<pad>",
-    "lstrip": false,
-    "normalized": false,
-    "rstrip": false,
-    "single_word": false
-  },
-  "unk_token": {
-    "content": "<unk>",
-    "lstrip": false,
-    "normalized": false,
-    "rstrip": false,
-    "single_word": false
-  }
-}
-<<<<<<< HEAD
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
-=======
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229

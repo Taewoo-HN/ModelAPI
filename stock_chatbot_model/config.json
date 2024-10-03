@@ -108,8 +108,4 @@
     "transformers_version": "4.45.1",
     "use_cache": true,
     "vocab_size": 30000
-<<<<<<< HEAD
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
-=======
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
   }
