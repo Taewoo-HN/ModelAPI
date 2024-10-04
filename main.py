@@ -129,6 +129,7 @@ def download_file():
 
 
 @app.post("/chatbot")
+def chatbot_response(question: ChatRequest):
     prompt = f"질문: {question}\n답변: "
 
     input_ids = chatbot_tokenizer.encode(prompt, return_tensors='pt', truncation=True, max_length=128).to(device)
