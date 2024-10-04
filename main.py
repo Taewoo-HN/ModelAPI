@@ -53,11 +53,11 @@ model = None  # 모델 로드를 위한 변수
 tokenizer = None  # 토크나이저 로드를 위한 변수
 chatbot_model = None
 chatbot_tokenizer = None
-
+lang_model = None
 
 # 모델 및 토크나이저 로드 함수 (앱 시작 시 실행)
 def load_model_and_tokenizer():
-    global model, tokenizer, chatbot_model, chatbot_tokenizer
+    global model, tokenizer, chatbot_model, chatbot_tokenizer, lang_model
     # 모델과 토크나이저를 로드합니다.
     tokenizer = tfds.deprecated.text.SubwordTextEncoder.load_from_file('tokenizer')
     model = transformer(
@@ -75,7 +75,6 @@ def load_model_and_tokenizer():
     chatbot_model.to(device)
     
     lang_model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
-    logging.info("모델 및 토크나이저 로드 완료!")
     
 
 # API 엔드포인트 구성
@@ -130,17 +129,7 @@ def download_file():
 
 
 @app.post("/chatbot")
-def chatbot_response(question: ChatRequest):
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    @app.post("/chatbot")
-def chatbot_response(question: ChatRequest):
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
-=======
-    @app.post("/chatbot")
-def chatbot_response(question: ChatRequest):
->>>>>>> 5fdafb13d3335f202e4694f24766ecb50fc19229
+
     
     prompt = f"질문: {question}\n답변: "
 
