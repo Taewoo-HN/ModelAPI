@@ -89,7 +89,7 @@ def summarize_news(news: NewsSummary):
 def keyword_extract(string: NewsData):
     key_text = string.news
     key_text = key_extract_module.preprocessing_article(key_text)
-    (article_embedding, n_gram_embeddings, n_gram_words) = key_extract_module.article_embedding(key_text)
+    (article_embedding, n_gram_embeddings, n_gram_words) = key_extract_module.article_embedding(key_text, lang_model)
     news_keywords = key_extract_module.max_sum_sim(article_embedding, n_gram_embeddings, n_gram_words, top_n=6, variety=10)
     (key_embedding, keys_list) = key_extract_module.key_extract(lang_model)
     top_n = 5

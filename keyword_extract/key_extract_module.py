@@ -24,12 +24,11 @@ def preprocessing_article(article: str):
     text = ' '.join([' '.join(item) if isinstance(item, list) else item for item in nouns])
     return text
 
-def article_embedding(text: str):
+def article_embedding(text: str, model):
     n_gram_range = (1, 2)
     word_vectorizer = CountVectorizer(ngram_range=n_gram_range).fit([text])
     n_gram_words = word_vectorizer.get_feature_names_out()
 
-    model = SentenceTransformer('sentence-transformers/xlm-r-100langs-bert-base-nli-stsb-mean-tokens')
     article_embedding = model.encode([text])
     n_gram_embedding = model.encode(n_gram_words)
 
