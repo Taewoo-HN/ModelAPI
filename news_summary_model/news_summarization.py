@@ -27,6 +27,16 @@ warmup_steps = 1000
 previous_steps = 0
 
 
+def regex_column(columnList):
+    if not isinstance(columnList, str):
+        return ''
+    columnList = re.sub(r'\S+@\S+\.\S+', '', columnList)
+    columnList = columnList.replace('\n', '')
+    columnList = re.sub(r'\[.*?\]|\{.*?\}|\(.*?\)', '', columnList)
+    columnList = re.sub(r'[^가-힣a-zA-Z0-9\u4e00-\u9fff\s.,!?\'\"~]', ' ', columnList)
+    columnList = re.sub(r'\s+', ' ', columnList).strip()
+    return columnList
+
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, position, d_model):
         super(PositionalEncoding, self).__init__()
@@ -328,6 +338,7 @@ optimizer = tf.keras.optimizers.Adam(
 
 START_TOKEN, END_TOKEN = [tokenizer.vocab_size], [tokenizer.vocab_size + 1]
 
+model.load_weights('transformer(202_0.89_0.22).h5')
 
 def evaluate(sentence):
     sentence = tf.expand_dims(
@@ -358,17 +369,4 @@ def predict(sentence):
     print(f'\n요약 : {predicted_sentence}')
 
     return predicted_sentence
-
-model.load_weights('transformer(202_0.89_0.22).h5')
-
-def regex_column(columnList):
-    if not isinstance(columnList, str):
-        return ''
-    columnList = re.sub(r'\S+@\S+\.\S+', '', columnList)
-    columnList = columnList.replace('\n', '')
-    columnList = re.sub(r'\[.*?\]|\{.*?\}|\(.*?\)', '', columnList)
-    columnList = re.sub(r'[^가-힣a-zA-Z0-9\u4e00-\u9fff\s.,!?\'\"~]', ' ', columnList)
-    columnList = re.sub(r'\s+', ' ', columnList).strip()
-    return columnList
-
 
