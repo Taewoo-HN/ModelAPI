@@ -24,6 +24,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
 app = FastAPI()
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # 키워드와 제목 리스트를 받는 모델 정의
 class NewsRequest(BaseModel):
