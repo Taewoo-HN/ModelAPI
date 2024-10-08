@@ -23,9 +23,6 @@ import keyword_extract.key_extract_module as key_extract_module
 from sklearn.metrics.pairwise import cosine_similarity
 from sentence_transformers import SentenceTransformer
 
-# 장치 설정 (GPU 사용 가능 시 GPU, 아니면 CPU)
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 app = FastAPI()
 
 # 키워드와 제목 리스트를 받는 모델 정의
@@ -138,10 +135,30 @@ def chatbot_response(question: ChatRequest):
         skip_special_tokens=True,
         clean_up_tokenization_spaces=True  # 경고를 제거하기 위해 추가
     )
-    
-    if "답변:" in output:
-        response = output.rsplit("답변:", 1)[-1].strip()
-    else:
-        response = "죄송합니다. 이해하지 못했어요."
 
-    return json.dumps({"response":response}, ensure_ascii=False).encode('utf8')
+    response = output.split("답변:")[-1].strip()
+
+    # 종결어미를 기준으로 문장을 분리하는 부분
+    end_markers = ["니다.", "합니다.", "습니다.", "이네요.", "겠네요.", "군요.", "할 것입니다.", "입니다."]
+    sentences = []
+    temp_sentence = ""
+
+    for char in response:
+        temp_sentence += char
+        if any(temp_sentence.endswith(marker) for marker in end_markers):
+            sentences.append(temp_sentence.strip())
+            temp_sentence = ""
+        if len(sentences) >= 3:  # 종결어미가 포함된 문장 3개까지만 출력
+            break
+
+    # 문장이 3개보다 적을 경우 남은 텍스트도 추가
+    if temp_sentence:
+        sentences.append(temp_sentence.strip())
+    
+    # 최종 응답으로 3개 문장 연결
+    response = ' '.join(sentences[:3])
+    # response가 없으면 기본 메시지로 대체
+    final_response = response if response else "죄송합니다. 이해하지 못했어요."
+    
+    # JSON 형식으로 응답을 반환
+    return json.dumps({"response": final_response}, ensure_ascii=False).encode('utf8')
